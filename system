@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ቃል (Qal)</title>
+    <link rel="manifest" href="manifest.json?v=3.0">
+    <meta name="theme-color" content="#1a2a6c">
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <style>
+        :root {
+            --primary: #1a2a6c;
+            --accent: #f39c12;
+            --sky: #87CEEB;
+            --white: #ffffff;
+            --success: #28a745;
+            --danger: #e74c3c;
+            --light: #f8f9fa;
+            --border: #e0e0e0;
+            --text: #333333;
+            --subtext: #777777;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%; width: 100%;
+            font-family: 'Nyala', 'Segoe UI', sans-serif;
+            background: #f0f4ff;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ─── HEADER ─── */
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px 8px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .header-logo { font-size: 26px; font-weight: 900; letter-spacing: 1px; }
+        .header-sub { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+        .header-pts {
+            background: var(--accent);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* ─── TICKER ─── */
+        .ticker {
+            background: var(--accent);
+            color: white;
+            padding: 5px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            font-size: 13px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .ticker p {
+            display: inline-block;
+            animation: ticker 25s linear infinite;
+            margin: 0;
+            padding-left: 100%;
+        }
+        @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-200%); } }
+
+        /* ─── MAIN CONTENT ─── */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 16px 16px 160px 16px;
+        }
+
+        /* ─── SCREENS ─── */
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* ─── REGISTRATION ─── */
+        .reg-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 440px;
+            margin: 20px auto;
+            text-align: center;
+        }
+        .reg-logo { font-size: 48px; margin-bottom: 8px; }
+        .reg-title { font-size: 22px; font-weight: 900; color: var(--primary); margin-bottom: 4px; }
+        .reg-sub { font-size: 13px; color: var(--subtext); margin-bottom: 20px; }
+        .reg-label { font-size: 13px; font-weight: bold; color: var(--primary); text-align: left; margin-bottom: 8px; margin-top: 16px; }
+        .reg-input {
+            width: 100%; padding: 13px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            margin-bottom: 10px;
+        }
+        .reg-input:focus { border-color: var(--primary); }
+        .trad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .trad-btn {
+            padding: 12px 8px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: white;
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            text-align: center;
+            color: var(--text);
+            transition: 0.2s;
+        }
+        .trad-btn.selected { border-color: var(--primary); background: #eef0ff; color: var(--primary); font-weight: bold; }
+        .trad-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+        .age-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+        .age-btn {
+            padding: 10px 8px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: white;
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            color: var(--text);
+        }
+        .age-btn.selected { border-color: var(--accent); background: #fff8e1; color: #b8750a; font-weight: bold; }
+        .reg-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .privacy-note { font-size: 11px; color: var(--subtext); margin-top: 10px; }
+
+        /* ─── QUESTIONS PAGE ─── */
+        .reward-bar {
+            background: #e8f5e9;
+            border-radius: 12px;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .reward-bar-text { font-size: 13px; color: #2e7d32; font-weight: bold; }
+        .reward-pts { font-size: 18px; font-weight: 900; color: #1b5e20; }
+        .quiz-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px 18px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            margin-bottom: 12px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .quiz-badge {
+            display: inline-block;
+            background: #eef0ff;
+            color: var(--primary);
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        #timer-circle {
+            width: 48px; height: 48px;
+            border: 3px solid var(--danger);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; color: var(--danger); font-size: 16px;
+            margin: 0 auto 12px;
+        }
+        #qText { font-weight: bold; font-size: 16px; min-height: 50px; margin: 10px 0; color: var(--text); line-height: 1.5; }
+        .opt-btn {
+            width: 100%;
+            padding: 13px 14px;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text);
+            text-align: left;
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            transition: 0.15s;
+        }
+        .opt-btn:active { transform: scale(0.98); }
+        .opt-btn.correct { border-color: var(--success); background: #f0fff4; }
+        .opt-btn.wrong { border-color: var(--danger); background: #fff0f0; }
+        .opt-label {
+            background: var(--primary);
+            color: white;
+            min-width: 30px; height: 30px;
+            border-radius: 8px;
+            margin-right: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        /* Result screen */
+        .result-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .result-pct { font-size: 64px; font-weight: 900; color: var(--accent); }
+        .result-msg { font-size: 16px; color: var(--subtext); margin-bottom: 20px; }
+
+        /* ─── LIBRARY PAGE ─── */
+        .lib-search {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 25px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            margin-bottom: 14px;
+            background: white;
+        }
+        .lib-filter { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
+        .lib-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            white-space: nowrap;
+            background: white;
+            color: var(--subtext);
+        }
+        .lib-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .book-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .book-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 12px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .book-card:active { transform: scale(0.97); }
+        .book-icon { font-size: 36px; margin-bottom: 8px; }
+        .book-title { font-size: 12px; font-weight: bold; color: var(--text); margin-bottom: 4px; line-height: 1.3; }
+        .book-tag { font-size: 10px; color: var(--subtext); }
+
+        /* ─── QETERO PAGE ─── */
+        .qetero-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+        .qtab {
+            flex: 1; padding: 9px 4px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            text-align: center;
+            background: white;
+            color: var(--subtext);
+            font-weight: bold;
+        }
+        .qtab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .qtab-content { display: none; }
+        .qtab-content.active { display: block; }
+
+        /* Chat */
+        .chat-window {
+            background: white;
+            border-radius: 16px;
+            padding: 14px;
+            min-height: 320px;
+            max-height: 380px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .msg { max-width: 85%; padding: 10px 14px; border-radius: 16px; font-size: 13px; line-height: 1.6; }
+        .msg-ai { background: #eef0ff; color: #1a2a6c; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .msg-user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .chat-input-row { display: flex; gap: 8px; }
+        .chat-input {
+            flex: 1; padding: 12px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 25px;
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+        }
+        .chat-send {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: none;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        /* Groups */
+        .group-card {
+            background: white;
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+        .group-avatar {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: #eef0ff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .group-name { font-size: 14px; font-weight: bold; color: var(--text); }
+        .group-meta { font-size: 12px; color: var(--subtext); margin-top: 2px; }
+        .group-badge {
+            margin-left: auto;
+            background: var(--primary);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* Appointments */
+        .appt-card {
+            background: white;
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .appt-title { font-size: 14px; font-weight: bold; color: var(--text); margin-bottom: 4px; }
+        .appt-detail { font-size: 12px; color: var(--subtext); margin-bottom: 8px; }
+        .appt-row { display: flex; align-items: center; justify-content: space-between; }
+        .appt-date { font-size: 12px; color: var(--primary); font-weight: bold; }
+        .join-btn {
+            padding: 6px 14px;
+            border: 1.5px solid var(--primary);
+            border-radius: 20px;
+            color: var(--primary);
+            background: transparent;
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .new-btn {
+            width: 100%; padding: 13px;
+            background: var(--primary);
+            color: white; border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            font-family: inherit;
+            cursor: pointer;
+            margin-bottom: 14px;
+        }
+
+        /* ─── POSTS PAGE ─── */
+        .post-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+        }
+        .post-author-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .post-avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: #eef0ff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: bold;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+        .post-author-name { font-size: 13px; font-weight: bold; color: var(--text); }
+        .post-verified { color: var(--success); font-size: 12px; }
+        .post-author-title { font-size: 11px; color: var(--subtext); }
+        .post-trad-tag {
+            margin-left: auto;
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        .post-title { font-size: 15px; font-weight: bold; color: var(--text); margin-bottom: 6px; line-height: 1.4; }
+        .post-excerpt { font-size: 13px; color: var(--subtext); line-height: 1.6; margin-bottom: 10px; }
+        .post-actions { display: flex; gap: 16px; }
+        .post-action { font-size: 13px; color: var(--subtext); cursor: pointer; }
+        .post-action:active { color: var(--primary); }
+
+        /* ─── BOTTOM NAV ─── */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white;
+            border-top: 1.5px solid var(--border);
+            display: flex;
+            z-index: 3000;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+        }
+        .nav-btn {
+            flex: 1; padding: 10px 4px 8px;
+            border: none; background: transparent;
+            cursor: pointer;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 3px;
+            font-size: 10px;
+            color: var(--subtext);
+            font-family: inherit;
+        }
+        .nav-btn.active { color: var(--primary); }
+        .nav-icon { font-size: 20px; }
+
+        /* ─── AD FOOTER ─── */
+        .ad-footer {
+            position: fixed; bottom: 60px; left: 0; right: 0;
+            background: white;
+            border-top: 1px solid var(--border);
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 0 10px;
+        }
+        .ad-banner-img {
+            height: 54px; width: auto;
+            max-width: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .ad-label-text { font-size: 9px; color: #bbb; text-align: center; position: absolute; top: 4px; right: 10px; }
+
+        /* ─── POPUP AD ─── */
+        .popup-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .popup-ad-card {
+            background: white;
+            border-radius: 20px;
+            width: 100%; max-width: 380px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .popup-ad-header {
+            background: var(--primary);
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+        .popup-ad-icon { font-size: 48px; margin-bottom: 8px; }
+        .popup-ad-brand { font-size: 18px; font-weight: 900; }
+        .popup-ad-tag { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+        .popup-ad-body { padding: 16px 20px; }
+        .popup-ad-desc { font-size: 13px; color: var(--subtext); text-align: center; line-height: 1.6; margin-bottom: 14px; }
+        .popup-cta {
+            width: 100%; padding: 13px;
+            background: var(--primary);
+            color: white; border: none;
+            border-radius: 12px;
+            font-size: 14px; font-weight: bold;
+            font-family: inherit;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+        .popup-skip {
+            width: 100%; padding: 10px;
+            background: transparent;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            font-size: 13px;
+            font-family: inherit;
+            color: var(--subtext);
+            cursor: pointer;
+        }
+
+        /* ─── UTILITIES ─── */
+        .hidden { display: none !important; }
+        .section-label { font-size: 11px; font-weight: bold; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; margin-top: 4px; }
+        .loading-text { text-align: center; color: var(--subtext); padding: 40px 20px; font-size: 14px; }
+        .action-btn {
+            width: 100%; padding: 14px;
+            background: var(--primary);
+            color: white; border: none;
+            border-radius: 12px;
+            font-size: 15px; font-weight: bold;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            20%,60% { transform: translateX(-6px); }
+            40%,80% { transform: translateX(6px); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- AUDIO -->
+<audio id="snd-correct" src="https://raw.githubusercontent.com/Endu-lab/Bible_Quize/main/assets/sounds/correct.mp3"></audio>
+<audio id="snd-wrong" src="https://raw.githubusercontent.com/Endu-lab/Bible_Quize/main/assets/sounds/wrong.mp3"></audio>
+<audio id="ad-audio" preload="auto"></audio>
+
+<!-- HEADER -->
+<header id="app-header" class="hidden">
+    <div>
+        <div class="header-logo">ቃል</div>
+        <div class="header-sub" id="header-trad">የቃሉ መድረክ</div>
+    </div>
+    <div class="header-pts">⭐ <span id="header-pts">0</span> pts</div>
+</header>
+
+<!-- TICKER -->
+<div class="ticker" id="app-ticker" style="display:none">
+    <p>🌟 ቃሉን ይፈትኑ፣ እውቀትዎን ያሳድጉ እና ይሸለሙ! • ጓደኞችዎን ወደ ቃል ይጋብዙ! • ዕለታዊ ጥያቄዎች ተዘጋጅተዋል! 🌟</p>
+</div>
+
+<!-- MAIN -->
+<main id="app-main">
+
+    <!-- ══ REGISTRATION SCREEN ══ -->
+    <div id="scr-reg" class="screen active">
+        <div class="reg-card">
+            <div class="reg-logo">✝️</div>
+            <div class="reg-title">ወደ ቃል እንኳን ደህና መጡ!</div>
+            <div class="reg-sub">Ethiopia's Bible Learning Platform</div>
+
+            <div class="reg-label">ሙሉ ስም</div>
+            <input class="reg-input" type="text" id="reg-name" placeholder="ስምዎን ያስገቡ">
+
+            <div class="reg-label">ስልክ ቁጥር</div>
+            <input class="reg-input" type="tel" id="reg-phone" placeholder="09xxxxxxxx">
+
+            <div class="reg-label">የሃይማኖት ትውፊትዎን ይምረጡ</div>
+            <div class="trad-grid">
+                <button class="trad-btn" onclick="selectTrad(this,'orthodox')" data-key="orthodox">
+                    <span class="trad-icon">⛪</span>ኢ/ኦ/ተዋሕዶ
+                </button>
+                <button class="trad-btn" onclick="selectTrad(this,'protestant')" data-key="protestant">
+                    <span class="trad-icon">🕊️</span>ፕሮቴስታንት
+                </button>
+                <button class="trad-btn" onclick="selectTrad(this,'catholic')" data-key="catholic">
+                    <span class="trad-icon">✝️</span>ካቶሊክ
+                </button>
+                <button class="trad-btn" onclick="selectTrad(this,'other')" data-key="other">
+                    <span class="trad-icon">📖</span>ሌላ ክርስቲያን
+                </button>
+            </div>
+
+            <div class="reg-label">ዕድሜ ምድብ</div>
+            <div class="age-grid">
+                <button class="age-btn" onclick="selectAge(this,'child')">ልጅ (5-12)</button>
+                <button class="age-btn" onclick="selectAge(this,'youth')">ወጣት (13-17)</button>
+                <button class="age-btn selected" onclick="selectAge(this,'adult')">አዋቂ (18+)</button>
+                <button class="age-btn" onclick="selectAge(this,'family')">ቤተሰብ</button>
+            </div>
+
+            <button class="reg-btn" onclick="registerUser()">ጀምር · Get Started →</button>
+            <p class="privacy-note">🔒 የሃይማኖት መረጃዎ ለግል ትምህርትዎ ብቻ ነው — አይጋራም።</p>
+        </div>
+    </div>
+
+    <!-- ══ QUESTIONS SCREEN ══ -->
+    <div id="scr-questions" class="screen">
+
+        <!-- Quiz active -->
+        <div id="quiz-active">
+            <div class="reward-bar">
+                <span class="reward-bar-text">ነጥቦችዎ</span>
+                <span class="reward-pts">⭐ <span id="pts-display">0</span></span>
+            </div>
+            <div class="quiz-card">
+                <span class="quiz-badge" id="quiz-badge">ኦርቶዶክስ</span>
+                <div id="timer-circle">20</div>
+                <div id="qText"></div>
+                <div id="opts-box"></div>
+            </div>
+        </div>
+
+        <!-- Result screen -->
+        <div id="quiz-result" class="hidden">
+            <div class="result-card">
+                <div style="font-size:48px; margin-bottom:8px;">🏆</div>
+                <div class="result-pct" id="res-pct">0%</div>
+                <div class="result-msg" id="res-msg"></div>
+                <div id="roll-section" class="hidden" style="margin-bottom:16px;">
+                    <p style="font-weight:bold; margin-bottom:10px;">ዕጣዎን ይሞክሩ!</p>
+                    <div id="gift-box" style="font-size:60px; cursor:pointer;" onclick="startRoll()">🎁</div>
+                </div>
+                <button class="action-btn" onclick="restartQuiz()">🔄 እንደገና ሞክር</button>
+            </div>
+        </div>
+
+        <!-- Start quiz button when no quiz running -->
+        <div id="quiz-start" class="hidden">
+            <div class="quiz-card" style="text-align:center;">
+                <div style="font-size:48px; margin-bottom:12px;">📖</div>
+                <div style="font-size:18px; font-weight:bold; color:var(--primary); margin-bottom:8px;">ቃሉን ይፈትኑ!</div>
+                <div style="font-size:13px; color:var(--subtext); margin-bottom:20px;">AI 25 ጥያቄዎችን ለእርስዎ አዘጋጅቷል</div>
+                <button class="action-btn" onclick="loadAndStartQuiz()">ጥያቄዎቹን ጀምር ➔</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ LIBRARY SCREEN ══ -->
+    <div id="scr-library" class="screen">
+        <input class="lib-search" type="text" placeholder="🔍 መጽሐፍ ይፈልጉ..." id="lib-search-input" oninput="filterBooks()">
+        <div class="lib-filter" id="lib-filters">
+            <button class="lib-chip active" onclick="filterByTrad(this,'all')">ሁሉም</button>
+            <button class="lib-chip" onclick="filterByTrad(this,'orthodox')">ኦርቶዶክስ</button>
+            <button class="lib-chip" onclick="filterByTrad(this,'protestant')">ፕሮቴስታንት</button>
+            <button class="lib-chip" onclick="filterByTrad(this,'catholic')">ካቶሊክ</button>
+            <button class="lib-chip" onclick="filterByTrad(this,'children')">ለልጆች</button>
+        </div>
+        <div class="section-label">የአማርኛ ቤተ-መጻሕፍት</div>
+        <div class="book-grid" id="book-grid"></div>
+    </div>
+
+    <!-- ══ QETERO SCREEN ══ -->
+    <div id="scr-qetero" class="screen">
+        <div class="qetero-tabs">
+            <button class="qtab active" onclick="switchQTab(this,'qt-chat')">💬 AI ቀጠሮ</button>
+            <button class="qtab" onclick="switchQTab(this,'qt-groups')">👥 ቡድኖች</button>
+            <button class="qtab" onclick="switchQTab(this,'qt-appt')">📅 ቀጠሮ</button>
+        </div>
+
+        <!-- Chat Tab -->
+        <div class="qtab-content active" id="qt-chat">
+            <div class="chat-window" id="chat-window">
+                <div class="msg msg-ai">ሰላም! እኔ ቀጠሮ AI ነኝ። ስለ ቅዱሳት መጻሕፍት ማንኛውንም ጥያቄ ይጠይቁኝ። 🙏</div>
+            </div>
+            <div class="chat-input-row">
+                <input class="chat-input" type="text" id="chat-input" placeholder="ጥያቄዎን ይጻፉ..." onkeydown="if(event.key==='Enter') sendChat()">
+                <button class="chat-send" onclick="sendChat()">➤</button>
+            </div>
+        </div>
+
+        <!-- Groups Tab -->
+        <div class="qtab-content" id="qt-groups">
+            <button class="new-btn" onclick="alert('ቡድን መፍጠሪያ በቅርቡ ይመጣል!')">+ አዲስ ቡድን ፍጠር</button>
+            <div class="section-label">የእርስዎ ቡድኖች</div>
+            <div id="groups-list">
+                <div class="group-card">
+                    <div class="group-avatar">⛪</div>
+                    <div>
+                        <div class="group-name">ደብረ ዘይት ቤ/ክ ቡድን</div>
+                        <div class="group-meta">124 አባላት</div>
+                    </div>
+                    <span class="group-badge">3</span>
+                </div>
+                <div class="group-card">
+                    <div class="group-avatar">🙏</div>
+                    <div>
+                        <div class="group-name">የጾም ጸሎት ቡድን</div>
+                        <div class="group-meta">56 አባላት</div>
+                    </div>
+                </div>
+                <div class="group-card">
+                    <div class="group-avatar">📖</div>
+                    <div>
+                        <div class="group-name">የሰንበት ትምህርት ቤት</div>
+                        <div class="group-meta">38 አባላት</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointments Tab -->
+        <div class="qtab-content" id="qt-appt">
+            <button class="new-btn" onclick="alert('ቀጠሮ መፍጠሪያ በቅርቡ ይመጣል!')">+ አዲስ ቀጠሮ ፍጠር</button>
+            <div class="section-label">ቅርብ ቀጠሮዎች</div>
+            <div id="appt-list">
+                <div class="appt-card">
+                    <div class="appt-title">🏔️ ወደ ላሊበላ የሐጅ ጉዞ</div>
+                    <div class="appt-detail">ኦርቶዶክስ አማኞች ጉዞ — 15 ቦታ ይቀራል</div>
+                    <div class="appt-row">
+                        <span class="appt-date">ጥር 5, 2017 ዓ.ም</span>
+                        <button class="join-btn">ተቀላቀሉ</button>
+                    </div>
+                </div>
+                <div class="appt-card">
+                    <div class="appt-title">📖 የጋራ መጽሐፍ ቅዱስ ጥናት</div>
+                    <div class="appt-detail">ዮሐንስ ወንጌል — ሁሉም ትውፊቶች</div>
+                    <div class="appt-row">
+                        <span class="appt-date">ሰኞ ምሽት 7:00</span>
+                        <button class="join-btn">ተቀላቀሉ</button>
+                    </div>
+                </div>
+                <div class="appt-card">
+                    <div class="appt-title">🎓 የሰንበት ትምህርት ቤት ስብሰባ</div>
+                    <div class="appt-detail">መምህራን ስብሰባ — ቀጣዩ ሴሚስተር ዕቅድ</div>
+                    <div class="appt-row">
+                        <span class="appt-date">ቅዳሜ 9:00 ጠዋት</span>
+                        <button class="join-btn">ተቀላቀሉ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ POSTS SCREEN ══ -->
+    <div id="scr-posts" class="screen">
+        <button class="new-btn" onclick="alert('ጽሑፍ መጻፊያ በቅርቡ ይመጣል!')">+ አዲስ ጽሑፍ ይጻፉ</button>
+        <div class="section-label">የምሁራን ጽሑፎች</div>
+        <div id="posts-list"></div>
+    </div>
+
+</main>
+
+<!-- AD FOOTER BANNER -->
+<div class="ad-footer" id="ad-footer" style="display:none">
+    <span class="ad-label-text">ማስታወቂያ</span>
+    <div id="ad-banner-box">
+        <p style="color:#ccc; font-size:12px;">ማስታወቂያ በመጫን ላይ...</p>
+    </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" id="bottom-nav" style="display:none">
+    <button class="nav-btn active" id="nav-questions" onclick="goTo('questions')">
+        <span class="nav-icon">❓</span>ጥያቄ
+    </button>
+    <button class="nav-btn" id="nav-library" onclick="goTo('library')">
+        <span class="nav-icon">📚</span>ቤተ-መጽ
+    </button>
+    <button class="nav-btn" id="nav-qetero" onclick="goTo('qetero')">
+        <span class="nav-icon">💬</span>ቀጠሮ
+    </button>
+    <button class="nav-btn" id="nav-posts" onclick="goTo('posts')">
+        <span class="nav-icon">📰</span>ጽሑፎች
+    </button>
+</nav>
+
+<!-- POPUP AD OVERLAY -->
+<div class="popup-overlay hidden" id="popup-overlay">
+    <div class="popup-ad-card">
+        <div class="popup-ad-header" id="popup-header">
+            <div class="popup-ad-icon" id="popup-icon">📚</div>
+            <div class="popup-ad-brand" id="popup-brand">ቃለ ሕይወት መጻሕፍት</div>
+            <div class="popup-ad-tag" id="popup-tag">አዲስ አበባ</div>
+        </div>
+        <div class="popup-ad-body">
+            <div class="popup-ad-desc" id="popup-desc">አዲስ የደረሱ የአማርኛ መንፈሳዊ መጻሕፍት። ሃይማኖተ አበው፣ ስንክሳር እና ሌሎችም።</div>
+            <button class="popup-cta" id="popup-cta" onclick="popupClick()">🔗 ለበለጠ ይጎብኙ</button>
+            <button class="popup-skip" id="popup-skip" disabled onclick="closePopup()">ዝለሉ (<span id="popup-countdown">5</span>)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// FIREBASE CONFIG — replace with yours
+// ══════════════════════════════════════════════
+const firebaseConfig = {
+    apiKey: "AIzaSyCLiqB5FqygKqPwLlctFsvQBP58fHontnc",
+    authDomain: "biblicallanguagequizbot.firebaseapp.com",
+    projectId: "biblicallanguagequizbot",
+    storageBucket: "biblicallanguagequizbot.firebasestorage.app",
+    messagingSenderId: "1040255793336",
+    appId: "1:1040255793336:web:83444c54330769d257dc4d"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ══════════════════════════════════════════════
+// GEMINI API KEY — paste your free key here
+// ══════════════════════════════════════════════
+const GEMINI_KEY = "YOUR_GEMINI_API_KEY_HERE";
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let user = { name:'', phone:'', tradition:'orthodox', age:'adult', pts:0 };
+let qPool = [], qIdx = 0, score = 0, timer, tLeft = 20;
+let ads = [], currentAdIdx = 0;
+let winChance = 15, minToRoll = 90;
+let popupTimer = null;
+let currentPopupAd = null;
+
+const tradNames = {
+    orthodox: 'ኦርቶዶክስ ተዋሕዶ',
+    protestant: 'ፕሮቴስታንት',
+    catholic: 'ካቶሊክ',
+    other: 'ክርስቲያን'
+};
+
+const BOOKS = [
+    { id:1, title:'ሃይማኖተ አበው', icon:'📖', trad:'orthodox', tag:'ኦርቶዶክስ', desc:'የቅዱሳን አበው ትምህርት' },
+    { id:2, title:'ስንክሳር — ጥቅምት', icon:'📜', trad:'orthodox', tag:'ኦርቶዶክስ', desc:'የቅዱሳን ታሪክ' },
+    { id:3, title:'ቅዳሴ ዘኢትዮጵያ', icon:'⛪', trad:'orthodox', tag:'ኦርቶዶክስ', desc:'የኢ/ኦ/ተዋሕዶ ቅዳሴ' },
+    { id:4, title:'ፍካሬ ኢየሱስ', icon:'✝️', trad:'orthodox', tag:'ኦርቶዶክስ', desc:'ትርጓሜ ወንጌል' },
+    { id:5, title:'የጸሎት ደብዳቤ', icon:'🙏', trad:'protestant', tag:'ፕሮቴስታንት', desc:'ወንጌላዊ ጸሎቶች' },
+    { id:6, title:'ትምህርተ ሃይማኖት', icon:'📕', trad:'protestant', tag:'ፕሮቴስታንት', desc:'ወንጌላዊ ትምህርት' },
+    { id:7, title:'ካቴኪዝም በአማርኛ', icon:'✝️', trad:'catholic', tag:'ካቶሊክ', desc:'የካቶሊክ ትምህርት' },
+    { id:8, title:'ለህጻናት መጽሐፍ ቅዱስ', icon:'🌟', trad:'children', tag:'ለልጆች', desc:'ቀላል ቋንቋ ለህጻናት' },
+    { id:9, title:'መዝሙረ ዳዊት', icon:'🎵', trad:'orthodox', tag:'ኦርቶዶክስ', desc:'150 መዝሙሮች' },
+    { id:10, title:'የቤተ ክርስቲያን ታሪክ', icon:'🏛️', trad:'all', tag:'ሁሉም', desc:'የኢትዮጵያ ቤ/ክ ታሪክ' },
+];
+
+const SAMPLE_POSTS = [
+    {
+        name:'አባ ገብረ ሚካኤል', initial:'አ', trad:'orthodox', tradLabel:'ኦርቶዶክስ', tradColor:'#eef0ff', tradTextColor:'#1a2a6c',
+        title:'የጾም ምንነት እና መንፈሳዊ ፋይዳው', verified:true, role:'ዲያቆን · ቅ/ማርያም ቤ/ክ',
+        excerpt:'ጾም ከምግብ መቆጠብ ብቻ አይደለም። ከኃጢአት፣ ከክፉ ቃል እና ከክፉ ሐሳብ መቆጠብ ነው...',
+        likes:142, comments:38
+    },
+    {
+        name:'ፓስተር ዳዊት ተስፋዬ', initial:'ፓ', trad:'protestant', tradLabel:'ፕሮቴስታንት', tradColor:'#e8f5e9', tradTextColor:'#2e7d32',
+        title:'በእምነት ብቻ — ሮሜ 5:1 ትርጓሜ', verified:true, role:'Pastor · Addis Ababa',
+        excerpt:'ጳውሎስ ስለ እምነት ጽድቅ ሲናገር ምን ማለቱ ነው? ይህ ጥያቄ ዛሬም ተዛማጅ ነው...',
+        likes:89, comments:21
+    },
+    {
+        name:'አባ ጌታቸው ወርቁ', initial:'ጌ', trad:'catholic', tradLabel:'ካቶሊክ', tradColor:'#fff3e0', tradTextColor:'#e65100',
+        title:'ቅዱስ ቁርባን — የቤ/ክ ምስጢር', verified:true, role:'Father · Ethiopian Catholic Church',
+        excerpt:'ቅዱስ ቁርባን ምን ማለት ነው? ለምን ይህን ምስጢር ስንፈጽም ይህ ጠቀሜታ አለው?...',
+        likes:67, comments:15
+    },
+];
+
+// ══════════════════════════════════════════════
+// REGISTRATION
+// ══════════════════════════════════════════════
+let selectedTrad = 'orthodox';
+let selectedAge = 'adult';
+
+function selectTrad(el, key) {
+    document.querySelectorAll('.trad-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedTrad = key;
+}
+
+function selectAge(el, key) {
+    document.querySelectorAll('.age-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedAge = key;
+}
+
+async function registerUser() {
+    const name = document.getElementById('reg-name').value.trim();
+    const phone = document.getElementById('reg-phone').value.trim();
+    if (!name) return alert('ስምዎን ያስገቡ!');
+    if (!phone) return alert('ስልክ ቁጥርዎን ያስገቡ!');
+    if (!selectedTrad) return alert('ትውፊትዎን ይምረጡ!');
+
+    user = { name, phone, tradition: selectedTrad, age: selectedAge, pts: 0 };
+    localStorage.setItem('qal_user', JSON.stringify(user));
+
+    try {
+        await db.collection('users').add({
+            name, phone, tradition: selectedTrad, age: selectedAge,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch(e) { console.log('User save error:', e); }
+
+    launchApp();
+}
+
+function launchApp() {
+    document.getElementById('scr-reg').classList.remove('active');
+    document.getElementById('app-header').classList.remove('hidden');
+    document.getElementById('app-ticker').style.display = 'block';
+    document.getElementById('bottom-nav').style.display = 'flex';
+    document.getElementById('ad-footer').style.display = 'flex';
+    document.getElementById('header-trad').textContent = tradNames[user.tradition] || 'ክርስቲያን';
+    document.getElementById('quiz-badge').textContent = tradNames[user.tradition];
+
+    loadAds();
+    renderBooks();
+    renderPosts();
+    goTo('questions');
+}
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+function goTo(page) {
+    ['questions','library','qetero','posts'].forEach(p => {
+        document.getElementById('scr-' + p).classList.remove('active');
+        const nb = document.getElementById('nav-' + p);
+        if (nb) nb.classList.remove('active');
+    });
+    document.getElementById('scr-' + page).classList.add('active');
+    const nb = document.getElementById('nav-' + page);
+    if (nb) nb.classList.add('active');
+
+    if (page === 'questions') {
+        const active = document.getElementById('quiz-active');
+        const result = document.getElementById('quiz-result');
+        const start = document.getElementById('quiz-start');
+        if (!active.classList.contains('hidden')) return;
+        if (!result.classList.contains('hidden')) return;
+        start.classList.remove('hidden');
+    }
+}
+
+// ══════════════════════════════════════════════
+// QUESTIONS — LOAD FROM FIREBASE
+// ══════════════════════════════════════════════
+async function loadAndStartQuiz() {
+    document.getElementById('quiz-start').classList.add('hidden');
+    document.getElementById('quiz-active').innerHTML = '<p class="loading-text">ጥያቄዎች በመጫን ላይ... ⏳</p>';
+
+    try {
+        const snap = await db.collection('questions')
+            .where('tradition', 'in', [user.tradition, 'all'])
+            .get();
+
+        qPool = [];
+        snap.forEach(d => qPool.push({ id: d.id, ...d.data() }));
+
+        if (qPool.length < 5) {
+            // Fetch from Gemini if not enough questions
+            await generateQuestionsWithGemini();
+            return loadAndStartQuiz();
+        }
+
+        qPool = qPool.sort(() => 0.5 - Math.random()).slice(0, 25);
+        qIdx = 0; score = 0;
+
+        // Restore quiz-active HTML
+        document.getElementById('quiz-active').innerHTML = `
+            <div class="reward-bar">
+                <span class="reward-bar-text">ነጥቦችዎ</span>
+                <span class="reward-pts">⭐ <span id="pts-display">${user.pts}</span></span>
+            </div>
+            <div class="quiz-card">
+                <span class="quiz-badge" id="quiz-badge">${tradNames[user.tradition]}</span>
+                <div id="timer-circle">20</div>
+                <div id="qText"></div>
+                <div id="opts-box"></div>
+            </div>`;
+
+        renderQ();
+
+        // Config from Firebase
+        try {
+            const rewSnap = await db.collection('config').doc('rewards').get();
+            if (rewSnap.exists) {
+                winChance = rewSnap.data().winRate || 15;
+                minToRoll = rewSnap.data().minScore || 90;
+            }
+        } catch(e) {}
+
+    } catch(e) {
+        console.log('Load error:', e);
+        document.getElementById('quiz-active').innerHTML = '<p class="loading-text">ግንኙነት የለም! እንደገና ይሞክሩ።</p>';
+    }
+}
+
+function renderQ() {
+    const q = qPool[qIdx];
+    document.getElementById('qText').innerText = q.text;
+    const labels = ['ሀ','ለ','ሐ','መ'];
+    let h = '';
+    q.options.forEach((opt, i) => {
+        const code = String.fromCharCode(65 + i);
+        h += `<button class="opt-btn" onclick="checkAns('${code}')">
+                <div class="opt-label">${labels[i]}</div>
+                <span>${opt}</span>
+              </button>`;
+    });
+    document.getElementById('opts-box').innerHTML = h;
+    startTimer();
+}
+
+function startTimer() {
+    tLeft = 20;
+    clearInterval(timer);
+    document.getElementById('timer-circle').innerText = tLeft;
+    timer = setInterval(() => {
+        tLeft--;
+        const el = document.getElementById('timer-circle');
+        if (el) el.innerText = tLeft;
+        if (tLeft <= 5 && el) el.style.borderColor = 'orange';
+        if (tLeft <= 0) { clearInterval(timer); checkAns('X'); }
+    }, 1000);
+}
+
+function checkAns(a) {
+    clearInterval(timer);
+    const opts = document.querySelectorAll('.opt-btn');
+    const correctCode = qPool[qIdx].correct;
+    opts.forEach((btn, i) => {
+        btn.onclick = null;
+        const code = String.fromCharCode(65 + i);
+        if (code === correctCode) btn.classList.add('correct');
+        else if (code === a) btn.classList.add('wrong');
+    });
+
+    if (a === correctCode) {
+        score++;
+        user.pts += 10;
+        document.getElementById('header-pts').textContent = user.pts;
+        document.getElementById('pts-display').textContent = user.pts;
+        document.getElementById('snd-correct').play().catch(() => {});
+    } else {
+        document.getElementById('snd-wrong').play().catch(() => {});
+    }
+
+    setTimeout(() => {
+        qIdx++;
+        if (qIdx < qPool.length) {
+            renderQ();
+            // Show popup ad every 5 questions
+            if (qIdx % 5 === 0) showPopupAd();
+        } else {
+            showFinal();
+        }
+    }, 800);
+}
+
+async function showFinal() {
+    document.getElementById('quiz-active').classList.add('hidden');
+    document.getElementById('quiz-result').classList.remove('hidden');
+    const pct = Math.round((score / qPool.length) * 100);
+    document.getElementById('res-pct').innerText = pct + '%';
+    document.getElementById('res-msg').innerText = pct >= 80
+        ? 'እጅግ ጥሩ! ቃሉን ያውቃሉ 🎉'
+        : pct >= 60
+        ? 'ጥሩ ነው! ቀጥሉ 📖'
+        : 'አዘኑ! ቀጥሉ ያስቡ 💪';
+
+    localStorage.setItem('qal_user', JSON.stringify(user));
+
+    try {
+        await db.collection('results').add({
+            name: user.name, phone: user.phone,
+            tradition: user.tradition,
+            score: pct, pts: user.pts,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch(e) {}
+
+    if (pct >= minToRoll) document.getElementById('roll-section').classList.remove('hidden');
+}
+
+function restartQuiz() {
+    document.getElementById('quiz-result').classList.add('hidden');
+    document.getElementById('quiz-start').classList.remove('hidden');
+    const quizActive = document.getElementById('quiz-active');
+    quizActive.classList.remove('hidden');
+    quizActive.innerHTML = `
+        <div class="reward-bar">
+            <span class="reward-bar-text">ነጥቦችዎ</span>
+            <span class="reward-pts">⭐ <span id="pts-display">${user.pts}</span></span>
+        </div>
+        <div class="quiz-card">
+            <span class="quiz-badge" id="quiz-badge">${tradNames[user.tradition]}</span>
+            <div id="timer-circle">20</div>
+            <div id="qText"></div>
+            <div id="opts-box"></div>
+        </div>`;
+    quizActive.classList.add('hidden');
+    document.getElementById('quiz-start').classList.remove('hidden');
+}
+
+function startRoll() {
+    const gift = document.getElementById('gift-box');
+    gift.style.animation = 'shake 0.8s infinite';
+    setTimeout(async () => {
+        gift.style.animation = 'none';
+        const win = (Math.random() * 100) < winChance;
+        const rollSection = document.getElementById('roll-section');
+        if (win) {
+            rollSection.innerHTML = `<h3 style="color:var(--success)">እንኳን ደስ አሎት! 🎉</h3><p>የ 5 ብር ካርድ አግኝተዋል!</p>`;
+            try {
+                await db.collection('winners').add({
+                    name: user.name, phone: user.phone,
+                    prize: '5 ETB Card',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) {}
+        } else {
+            rollSection.innerHTML = `<p style="color:var(--danger)">አልደረሰዎትም 😔 — ደግሞ ይሞክሩ!</p>`;
+        }
+    }, 3000);
+}
+
+// ══════════════════════════════════════════════
+// GEMINI AI — QUESTION GENERATION
+// ══════════════════════════════════════════════
+async function generateQuestionsWithGemini() {
+    const tradContext = {
+        orthodox: 'Ethiopian Orthodox Tewahedo tradition, including fasting, saints (Synaxarium), liturgy (Qidasie), and Ethiopian church history',
+        protestant: 'Protestant/Evangelical tradition, focusing on New Testament, salvation by faith, and evangelical theology',
+        catholic: 'Catholic tradition including sacraments, catechism, and Ethiopian Catholic church',
+        other: 'general Christian tradition and Bible knowledge'
+    };
+
+    const prompt = `Generate 50 Bible quiz questions in Amharic (Ethiopian language) for the ${tradContext[user.tradition]}.
+
+Return ONLY valid JSON, no markdown, no explanation. Format:
+[
+  {
+    "text": "question text in Amharic",
+    "options": ["option A in Amharic", "option B in Amharic", "option C in Amharic", "option D in Amharic"],
+    "correct": "A",
+    "tradition": "${user.tradition}",
+    "difficulty": "easy"
+  }
+]
+
+Rules:
+- All text must be in Amharic script
+- correct field must be A, B, C, or D
+- Mix easy, medium, hard questions
+- Questions must be accurate Bible-based
+- Include variety: Old Testament, New Testament, Ethiopian church specifics`;
+
+    try {
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+                })
+            }
+        );
+        const data = await res.json();
+        const raw = data.candidates[0].content.parts[0].text;
+        const cleaned = raw.replace(/```json|```/g, '').trim();
+        const questions = JSON.parse(cleaned);
+
+        // Save to Firebase
+        const batch = db.batch();
+        questions.forEach(q => {
+            const ref = db.collection('questions').doc();
+            batch.set(ref, {
+                ...q,
+                generatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                source: 'gemini'
+            });
+        });
+        await batch.commit();
+        console.log(`✅ ${questions.length} questions saved to Firebase`);
+    } catch(e) {
+        console.log('Gemini error:', e);
+    }
+}
+
+// ══════════════════════════════════════════════
+// LIBRARY
+// ══════════════════════════════════════════════
+let currentTradFilter = 'all';
+
+function renderBooks(filter = 'all', search = '') {
+    const grid = document.getElementById('book-grid');
+    const filtered = BOOKS.filter(b => {
+        const tradMatch = filter === 'all' || b.trad === filter || b.trad === 'all';
+        const searchMatch = !search || b.title.includes(search) || b.desc.includes(search);
+        return tradMatch && searchMatch;
+    });
+    grid.innerHTML = filtered.map(b => `
+        <div class="book-card" onclick="openBook(${b.id})">
+            <div class="book-icon">${b.icon}</div>
+            <div class="book-title">${b.title}</div>
+            <div class="book-tag">${b.tag}</div>
+        </div>
+    `).join('');
+}
+
+function filterByTrad(el, trad) {
+    document.querySelectorAll('.lib-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    currentTradFilter = trad;
+    renderBooks(trad, document.getElementById('lib-search-input').value);
+}
+
+function filterBooks() {
+    renderBooks(currentTradFilter, document.getElementById('lib-search-input').value);
+}
+
+function openBook(id) {
+    const book = BOOKS.find(b => b.id === id);
+    alert(`📖 ${book.title}\n\n${book.desc}\n\nይህ መጽሐፍ በቅርቡ ይጨምራል!`);
+}
+
+// ══════════════════════════════════════════════
+// QETERO CHAT
+// ══════════════════════════════════════════════
+function switchQTab(el, tabId) {
+    document.querySelectorAll('.qtab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.qtab-content').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+}
+
+async function sendChat() {
+    const input = document.getElementById('chat-input');
+    const val = input.value.trim();
+    if (!val) return;
+
+    const window_ = document.getElementById('chat-window');
+    const userMsg = document.createElement('div');
+    userMsg.className = 'msg msg-user';
+    userMsg.textContent = val;
+    window_.appendChild(userMsg);
+    input.value = '';
+    window_.scrollTop = window_.scrollHeight;
+
+    // Thinking indicator
+    const thinking = document.createElement('div');
+    thinking.className = 'msg msg-ai';
+    thinking.textContent = '...በማሰብ ላይ 🤔';
+    window_.appendChild(thinking);
+    window_.scrollTop = window_.scrollHeight;
+
+    try {
+        const tradContext = tradNames[user.tradition] || 'ክርስቲያን';
+        const prompt = `You are Qetero, an Ethiopian Bible assistant for the Qal app. 
+The user follows the ${tradContext} tradition.
+Answer ONLY Bible-based questions. 
+Always respond in Amharic (Ethiopian script).
+Be respectful, accurate, and spiritually grounded.
+Keep answers concise but helpful.
+
+User question: ${val}`;
+
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { temperature: 0.5, maxOutputTokens: 512 }
+                })
+            }
+        );
+        const data = await res.json();
+        const reply = data.candidates[0].content.parts[0].text;
+        thinking.textContent = reply;
+    } catch(e) {
+        thinking.textContent = 'ይቅርታ! ምላሽ ለማምጣት አልተቻለም። እንደገና ይሞክሩ። 🙏';
+    }
+    window_.scrollTop = window_.scrollHeight;
+}
+
+// ══════════════════════════════════════════════
+// POSTS
+// ══════════════════════════════════════════════
+function renderPosts() {
+    document.getElementById('posts-list').innerHTML = SAMPLE_POSTS.map(post => `
+        <div class="post-card">
+            <div class="post-author-row">
+                <div class="post-avatar">${post.initial}</div>
+                <div>
+                    <div class="post-author-name">
+                        ${post.name}
+                        ${post.verified ? '<span class="post-verified">✓</span>' : ''}
+                    </div>
+                    <div class="post-author-title">${post.role}</div>
+                </div>
+                <span class="post-trad-tag" style="background:${post.tradColor}; color:${post.tradTextColor}; margin-left:auto;">
+                    ${post.tradLabel}
+                </span>
+            </div>
+            <div class="post-title">${post.title}</div>
+            <div class="post-excerpt">${post.excerpt}</div>
+            <div class="post-actions">
+                <span class="post-action">👍 ${post.likes}</span>
+                <span class="post-action">💬 ${post.comments}</span>
+                <span class="post-action">↗ አጋራ</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ══════════════════════════════════════════════
+// ADS SYSTEM
+// ══════════════════════════════════════════════
+async function loadAds() {
+    try {
+        const snap = await db.collection('ads').doc('config').get();
+        if (snap.exists) ads = snap.data().list || [];
+    } catch(e) {}
+
+    if (ads.length === 0) {
+        ads = [
+            { img:'', link:'#', audio:'', brand:'ቃለ ሕይወት መጻሕፍት', icon:'📚', desc:'የአማርኛ መንፈሳዊ መጻሕፍት ቤት', tag:'አዲስ አበባ' },
+            { img:'', link:'#', audio:'', brand:'ላሊበላ ጉዞ ኤጀንሲ', icon:'✈️', desc:'ወደ ላሊበላ ቅዱስ ጉዞ ያቅዱ', tag:'ከ 3,500 ብር' },
+        ];
+    }
+
+    updateBanner();
+    setInterval(updateBanner, 7000);
+}
+
+function updateBanner() {
+    if (!ads.length) return;
+    const ad = ads[currentAdIdx % ads.length];
+    currentAdIdx++;
+
+    const box = document.getElementById('ad-banner-box');
+    if (ad.img) {
+        box.innerHTML = `<img src="${ad.img}" class="ad-banner-img" onclick="window.open('${ad.link || '#'}','_blank')">`;
+    } else {
+        box.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px; animation: fadeIn 0.6s;">
+                <div style="font-size:30px;">${ad.icon || '📢'}</div>
+                <div>
+                    <div style="font-size:13px; font-weight:bold; color:var(--primary);">${ad.brand}</div>
+                    <div style="font-size:11px; color:var(--subtext);">${ad.desc}</div>
+                </div>
+                <div style="margin-left:auto; font-size:11px; font-weight:bold; color:var(--accent);">${ad.tag || ''}</div>
+            </div>`;
+    }
+
+    if (ad.audio) {
+        const audio = document.getElementById('ad-audio');
+        audio.src = ad.audio;
+        audio.play().catch(() => {});
+    }
+}
+
+// Popup ad system
+function showPopupAd() {
+    if (!ads.length) return;
+    const ad = ads[Math.floor(Math.random() * ads.length)];
+    currentPopupAd = ad;
+
+    document.getElementById('popup-icon').textContent = ad.icon || '📢';
+    document.getElementById('popup-brand').textContent = ad.brand || 'ማስታወቂያ';
+    document.getElementById('popup-tag').textContent = ad.tag || '';
+    document.getElementById('popup-desc').textContent = ad.desc || '';
+    document.getElementById('popup-overlay').classList.remove('hidden');
+
+    // Countdown
+    let count = 5;
+    const skipBtn = document.getElementById('popup-skip');
+    const countEl = document.getElementById('popup-countdown');
+    skipBtn.disabled = true;
+    skipBtn.style.opacity = '0.5';
+    countEl.textContent = count;
+
+    clearInterval(popupTimer);
+    popupTimer = setInterval(() => {
+        count--;
+        countEl.textContent = count;
+        if (count <= 0) {
+            clearInterval(popupTimer);
+            skipBtn.disabled = false;
+            skipBtn.style.opacity = '1';
+            skipBtn.textContent = 'ዝለሉ ✕';
+        }
+    }, 1000);
+}
+
+function popupClick() {
+    if (currentPopupAd?.link) window.open(currentPopupAd.link, '_blank');
+    closePopup();
+}
+
+function closePopup() {
+    document.getElementById('popup-overlay').classList.add('hidden');
+    clearInterval(popupTimer);
+}
+
+// ══════════════════════════════════════════════
+// SERVICE WORKER + PWA
+// ══════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js?v=3.0')
+            .then(() => console.log('SW registered'))
+            .catch(e => console.log('SW error', e));
+    });
+}
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+});
+
+// ══════════════════════════════════════════════
+// AUTO-LOGIN if returning user
+// ══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('qal_user');
+    if (saved) {
+        user = JSON.parse(saved);
+        launchApp();
+    }
+});
+</script>
+</body>
+</html>
