@@ -5,44 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qal Christian Society</title>
 
-    <!-- 1. FIREBASE CORE TOOLS (The SDK) -->
+    <!-- FIREBASE CORE TOOLS -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* Basic styling to make sure we can see the content */
-        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #f0f2f5; color: #1c1e21; }
+        header { background: #ffffff; padding: 15px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; position: sticky; top: 0; z-index: 100; }
+        h1 { color: #2c3e50; margin: 0; font-size: 24px; }
+        .nav-container { margin-top: 10px; }
+        .nav-btn { cursor: pointer; padding: 8px 16px; background: #3498db; color: white; display: inline-block; margin: 0 5px; border-radius: 20px; font-size: 14px; transition: 0.3s; }
+        .nav-btn:hover { background: #2980b9; }
+        .container { max-width: 600px; margin: 20px auto; padding: 0 15px; }
         .screen { display: none; }
         .screen.active { display: block; }
-        .post-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .nav-btn { cursor: pointer; padding: 10px; background: #007bff; color: white; display: inline-block; margin-right: 5px; border-radius: 5px; }
-        .loading-text { color: #666; font-style: italic; }
+        .post-card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid #3498db; }
+        .post-title { font-size: 20px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; display: block; }
+        .post-content { line-height: 1.6; color: #4b4f56; }
+        .post-meta { margin-top: 15px; font-size: 12px; color: #8d949e; border-top: 1px solid #eee; padding-top: 10px; }
+        .loading-text { text-align: center; padding: 20px; color: #666; }
     </style>
 </head>
 <body>
 
-    <div id="app-header">
+    <header id="app-header">
         <h1>ቃለ (Qal)</h1>
-        <div class="nav-btn" onclick="goTo('posts')">ጽሑፎች (Posts)</div>
-        <div class="nav-btn" onclick="goTo('library')">ቤተ-መጻሕፍት (Library)</div>
-    </div>
+        <div class="nav-container">
+            <div class="nav-btn" onclick="goTo('posts')">ጽሑፎች</div>
+            <div class="nav-btn" onclick="goTo('library')">ቤተ-መጻሕፍት</div>
+        </div>
+    </header>
 
-    <hr>
+    <div class="container">
+        <!-- POSTS SCREEN -->
+        <div id="scr-posts" class="screen active">
+            <div id="posts-list" class="loading-text">በመጫን ላይ...</div>
+        </div>
 
-    <!-- POSTS SCREEN -->
-    <div id="scr-posts" class="screen active">
-        <h2>የማኅበረሰቡ ጽሑፎች</h2>
-        <div id="posts-list">ጽሑፎች በመጫን ላይ...</div>
-    </div>
-
-    <!-- LIBRARY SCREEN -->
-    <div id="scr-library" class="screen">
-        <h2>መጻሕፍት</h2>
-        <div id="book-grid">መጻሕፍት በመጫን ላይ...</div>
+        <!-- LIBRARY SCREEN -->
+        <div id="scr-library" class="screen">
+            <div id="book-grid" class="loading-text">መጻሕፍት በመጫን ላይ...</div>
+        </div>
     </div>
 
     <script>
-        // 2. FIREBASE CONFIGURATION
+        // 1. FIREBASE CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyDfGIbFp3JNFVUv3aoghgLoAcj_9vFlf9E",
             authDomain: "qal-christian-society.firebaseapp.com",
@@ -59,48 +66,53 @@
         }
         const db = firebase.firestore();
 
-        // 3. NAVIGATION LOGIC
+        // 2. NAVIGATION LOGIC
         function goTo(screenId) {
-            // Hide all screens
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            // Show the selected one
             const target = document.getElementById('scr-' + screenId);
             if(target) target.classList.add('active');
 
-            // Load data when screen opens
             if (screenId === 'posts') loadPosts();
             if (screenId === 'library') loadLibrary();
         }
 
-        // 4. LOAD POSTS FROM FIREBASE
+        // 3. LOAD POSTS (Updated for your specific field names)
         function loadPosts() {
             const postsList = document.getElementById('posts-list');
             
-            // Try to get data from the "posts" collection
             db.collection("posts").get()
             .then((querySnapshot) => {
                 postsList.innerHTML = ""; 
                 if (querySnapshot.empty) {
-                    postsList.innerHTML = '<div>ምንም ጽሑፍ አልተገኘም:: እባክዎ በFirebase Console ውስጥ "posts" የሚል Collection መኖሩን ያረጋግጡ::</div>';
+                    postsList.innerHTML = '<div class="post-card">ምንም ጽሑፍ አልተገኘም::</div>';
                     return;
                 }
                 querySnapshot.forEach((doc) => {
                     const post = doc.data();
+
+                    // --- CRITICAL FIX: Mapping your field names ---
+                    // If you have "Welcome to Qal" as a field in Firebase, we use post["Welcome to Qal"]
+                    const displayTitle = post["Welcome to Qal"] || "ርዕስ የለውም";
+                    const displayContent = post["Content"] || "";
+                    const displayAuthor = post["author"] || "ያልታወቀ";
+                    const displayDate = post["created it"] || ""; // Note: if this is a Firebase timestamp, it needs formatting
+
                     postsList.innerHTML += `
                         <div class="post-card">
-                            <h3>${post.title || "ያልተሰየመ"}</h3>
-                            <p>${post.content || ""}</p>
-                            <small>በ ${post.author || "ያልታወቀ"} ተጻፈ</small>
+                            <span class="post-title">${displayTitle}</span>
+                            <div class="post-content">${displayContent}</div>
+                            <div class="post-meta">
+                                ✍️ በ ${displayAuthor} ተጻፈ | 📅 ${displayDate}
+                            </div>
                         </div>`;
                 });
             })
             .catch((error) => {
-                console.error("Error:", error);
-                postsList.innerHTML = "Error: " + error.message;
+                postsList.innerHTML = "ስህተት ተፈጥሯል: " + error.message;
             });
         }
 
-        // 5. LOAD LIBRARY FROM FIREBASE
+        // 4. LOAD LIBRARY
         function loadLibrary() {
             const bookGrid = document.getElementById('book-grid');
             db.collection("library").get()
@@ -110,15 +122,14 @@
                     const book = doc.data();
                     bookGrid.innerHTML += `
                         <div class="post-card">
-                            <strong>${book.title}</strong><br>
-                            <button onclick="window.open('${book.url}', '_blank')">አንብብ (Read)</button>
+                            <strong>${book.title || "መጽሐፍ"}</strong><br><br>
+                            <button class="nav-btn" onclick="window.open('${book.url}', '_blank')">አንብብ (Read)</button>
                         </div>`;
                 });
             });
         }
 
-        // 6. RUN IMMEDIATELY ON LOAD
-        // This ensures the posts show up as soon as the website opens
+        // 5. START APP
         window.onload = function() {
             loadPosts();
         };
