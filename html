@@ -1,156 +1,128 @@
-// ══════════════════════════════════════════════
-// FIREBASE CONFIG — Qal-Christian-Society
-// ══════════════════════════════════════════════
-const firebaseConfig = {
-  apiKey: "AIzaSyDfGIbFp3JNFVUv3aoghgLoAcj_9vFlf9E",
-  authDomain: "qal-christian-society.firebaseapp.com",
-  projectId: "qal-christian-society",
-  storageBucket: "qal-christian-society.firebasestorage.app",
-  messagingSenderId: "1077878834449",
-  appId: "1:1077878834449:web:83482024afd7c2cd9938b0",
-  measurementId: "G-JSV8XHE65K"
-};
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qal Christian Society</title>
 
-// Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.firestore();
+    <!-- 1. FIREBASE CORE TOOLS (The SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-// ══════════════════════════════════════════════
-// SYSTEM INTEGRATION LOGIC
-// ══════════════════════════════════════════════
+    <style>
+        /* Basic styling to make sure we can see the content */
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+        .screen { display: none; }
+        .screen.active { display: block; }
+        .post-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .nav-btn { cursor: pointer; padding: 10px; background: #007bff; color: white; display: inline-block; margin-right: 5px; border-radius: 5px; }
+        .loading-text { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
 
-// 1. Navigation & Screen Switching
-function goTo(screenId) {
-    // Hide all screens
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    
-    // Show selected screen
-    const target = document.getElementById('scr-' + screenId);
-    if(target) target.classList.add('active');
-    
-    // Highlight nav button
-    const navBtn = document.getElementById('nav-' + screenId);
-    if(navBtn) navBtn.classList.add('active');
+    <div id="app-header">
+        <h1>ቃለ (Qal)</h1>
+        <div class="nav-btn" onclick="goTo('posts')">ጽሑፎች (Posts)</div>
+        <div class="nav-btn" onclick="goTo('library')">ቤተ-መጻሕፍት (Library)</div>
+    </div>
 
-    // Trigger data loading based on screen
-    if (screenId === 'posts') loadPosts();
-    if (screenId === 'library') loadLibrary();
-}
+    <hr>
 
-// 2. Load Community Posts from Firebase
-function loadPosts() {
-    const postsList = document.getElementById('posts-list');
-    postsList.innerHTML = '<div class="loading-text">ጽሑፎች በመጫን ላይ...</div>';
+    <!-- POSTS SCREEN -->
+    <div id="scr-posts" class="screen active">
+        <h2>የማኅበረሰቡ ጽሑፎች</h2>
+        <div id="posts-list">ጽሑፎች በመጫን ላይ...</div>
+    </div>
 
-    db.collection("posts").orderBy("createdAt", "desc").limit(10).get()
-    .then((querySnapshot) => {
-        postsList.innerHTML = ""; 
-        if (querySnapshot.empty) {
-            postsList.innerHTML = '<div class="loading-text">ምንም ጽሑፍ አልተገኘም::</div>';
-            return;
+    <!-- LIBRARY SCREEN -->
+    <div id="scr-library" class="screen">
+        <h2>መጻሕፍት</h2>
+        <div id="book-grid">መጻሕፍት በመጫን ላይ...</div>
+    </div>
+
+    <script>
+        // 2. FIREBASE CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyDfGIbFp3JNFVUv3aoghgLoAcj_9vFlf9E",
+            authDomain: "qal-christian-society.firebaseapp.com",
+            projectId: "qal-christian-society",
+            storageBucket: "qal-christian-society.firebasestorage.app",
+            messagingSenderId: "1077878834449",
+            appId: "1:1077878834449:web:83482024afd7c2cd9938b0",
+            measurementId: "G-JSV8XHE65K"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
-        querySnapshot.forEach((doc) => {
-            const post = doc.data();
-            postsList.innerHTML += `
-                <div class="post-card">
-                    <div class="post-author-row">
-                        <div class="post-avatar">${post.author ? post.author[0] : '✝️'}</div>
-                        <div>
-                            <div class="post-author-name">${post.author || "ያልታወቀ መምህር"}</div>
-                            <div class="post-author-title">${post.date || ""}</div>
-                        </div>
-                    </div>
-                    <div class="post-title">${post.title}</div>
-                    <div class="post-excerpt">${post.content}</div>
-                </div>`;
-        });
-    })
-    .catch((error) => console.error("Error loading posts:", error));
-}
+        const db = firebase.firestore();
 
-// 3. Load Library Books from Firebase
-function loadLibrary() {
-    const bookGrid = document.getElementById('book-grid');
-    bookGrid.innerHTML = '<div class="loading-text">መጻሕፍት በመጫን ላይ...</div>';
+        // 3. NAVIGATION LOGIC
+        function goTo(screenId) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            // Show the selected one
+            const target = document.getElementById('scr-' + screenId);
+            if(target) target.classList.add('active');
 
-    db.collection("library").get()
-    .then((querySnapshot) => {
-        bookGrid.innerHTML = "";
-        querySnapshot.forEach((doc) => {
-            const book = doc.data();
-            bookGrid.innerHTML += `
-                <div class="book-card" onclick="window.open('${book.url}', '_blank')">
-                    <div class="book-icon">📖</div>
-                    <div class="book-title">${book.title}</div>
-                    <div class="book-tag">${book.category || "መንፈሳዊ"}</div>
-                </div>`;
-        });
-    });
-}
+            // Load data when screen opens
+            if (screenId === 'posts') loadPosts();
+            if (screenId === 'library') loadLibrary();
+        }
 
-// 4. User Registration (Saves to Firebase)
-function registerUser() {
-    const name = document.getElementById('reg-name').value;
-    const phone = document.getElementById('reg-phone').value;
-    
-    if(!name || !phone) {
-        alert("እባክዎን ስምዎን እና ስልክዎን ያስገቡ");
-        return;
-    }
+        // 4. LOAD POSTS FROM FIREBASE
+        function loadPosts() {
+            const postsList = document.getElementById('posts-list');
+            
+            // Try to get data from the "posts" collection
+            db.collection("posts").get()
+            .then((querySnapshot) => {
+                postsList.innerHTML = ""; 
+                if (querySnapshot.empty) {
+                    postsList.innerHTML = '<div>ምንም ጽሑፍ አልተገኘም:: እባክዎ በFirebase Console ውስጥ "posts" የሚል Collection መኖሩን ያረጋግጡ::</div>';
+                    return;
+                }
+                querySnapshot.forEach((doc) => {
+                    const post = doc.data();
+                    postsList.innerHTML += `
+                        <div class="post-card">
+                            <h3>${post.title || "ያልተሰየመ"}</h3>
+                            <p>${post.content || ""}</p>
+                            <small>በ ${post.author || "ያልታወቀ"} ተጻፈ</small>
+                        </div>`;
+                });
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+                postsList.innerHTML = "Error: " + error.message;
+            });
+        }
 
-    db.collection("users").add({
-        fullName: name,
-        phone: phone,
-        tradition: window.selectedTradition || 'other',
-        ageGroup: window.selectedAge || 'adult',
-        joinedAt: firebase.firestore.FieldValue.serverTimestamp()
-    })
-    .then(() => {
-        document.getElementById('scr-reg').classList.remove('active');
-        document.getElementById('app-header').classList.remove('hidden');
-        document.getElementById('bottom-nav').style.display = 'flex';
-        goTo('questions');
-    })
-    .catch((error) => alert("Error: " + error.message));
-}
+        // 5. LOAD LIBRARY FROM FIREBASE
+        function loadLibrary() {
+            const bookGrid = document.getElementById('book-grid');
+            db.collection("library").get()
+            .then((querySnapshot) => {
+                bookGrid.innerHTML = "";
+                querySnapshot.forEach((doc) => {
+                    const book = doc.data();
+                    bookGrid.innerHTML += `
+                        <div class="post-card">
+                            <strong>${book.title}</strong><br>
+                            <button onclick="window.open('${book.url}', '_blank')">አንብብ (Read)</button>
+                        </div>`;
+                });
+            });
+        }
 
-// Global variables for selection
-window.selectedTradition = 'orthodox';
-window.selectedAge = 'adult';
+        // 6. RUN IMMEDIATELY ON LOAD
+        // This ensures the posts show up as soon as the website opens
+        window.onload = function() {
+            loadPosts();
+        };
 
-function selectTrad(btn, val) {
-    document.querySelectorAll('.trad-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    window.selectedTradition = val;
-}
-
-function selectAge(btn, val) {
-    document.querySelectorAll('.age-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    window.selectedAge = val;
-}
-
-// ══════════════════════════════════════════════
-// GEMINI AI INTEGRATION (For Qetero Chat)
-// ══════════════════════════════════════════════
-const GEMINI_KEY = "PASTE_YOUR_GEMINI_KEY_HERE";
-
-async function sendChat() {
-    const input = document.getElementById('chat-input');
-    const window = document.getElementById('chat-window');
-    const msg = input.value.trim();
-    
-    if(!msg) return;
-
-    // Add user message to UI
-    window.innerHTML += `<div class="msg msg-user">${msg}</div>`;
-    input.value = "";
-    
-    // Simple placeholder for AI logic (Requires Fetch to Gemini API)
-    window.innerHTML += `<div class="msg msg-ai">በመፈለግ ላይ...</div>`;
-    window.scrollTop = window.scrollHeight;
-}
-</script>
+    </script>
+</body>
+</html>
